@@ -53,6 +53,11 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			while (doc_tokenizer.hasMoreTokens()) {
+				String word = doc_tokenizer.nextToken(); 
+				context.write(new Text(word), new IntWritable(1));
+			}
+
 		}
 	}
 
@@ -66,6 +71,11 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			int sum = 0;
+			for (IntWritable value : values) {
+				sum += value.get();
+			}
+			context.write(key, new IntWritable(sum));
 		}
 	}
 
@@ -81,6 +91,38 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			Map<String, Integer> wordCount = new HashMap<String, Integer>();
+			while (doc_tokenizer.hasMoreTokens()) {
+				String word = doc_tokenizer.nextToken(); 
+				if (wordCount.get(word) == null) { 
+					wordCount.put(word, 1);
+				}
+				else
+				{
+					wordCount.put(word, wordCount.get(word)+1);
+				}
+			}
+			String[] words = wordCount.keySet().toArray(new String[0]);
+			PairOfStrings wordPair = new PairOfStrings();
+	
+			for (int i = 0; i < words.length; i++) 
+			{
+				for (int j = i + 1; j < words.length; j++) 
+				{
+					if (words[i].compareTo(words[j])>0)
+					{
+						wordPair.set(words[j],words[i]);
+					}
+					else
+					{
+					wordPair.set(words[i],words[j]);
+					}
+					context.write(wordPair, new IntWritable(1));
+				}
+			}
+
+
+
 		}
 	}
 
@@ -93,6 +135,11 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			int sum = 0;
+			for (IntWritable value : values) {
+				sum += value.get();
+			}
+			context.write(key, new IntWritable(sum));
 		}
 	}
 
@@ -145,6 +192,14 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			double freq1 = word_total_map.get(key.getLeftElement());
+			double freq2 = word_total_map.get(key.getRightElement());
+			int sum = 0;
+			for (IntWritable value : values) {
+				sum += value.get();
+			}
+			double COR =sum/(freq1 * freq2);
+			context.write(key, new DoubleWritable(COR));
 		}
 	}
 

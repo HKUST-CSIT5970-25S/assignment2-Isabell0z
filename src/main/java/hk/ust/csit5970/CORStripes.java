@@ -43,6 +43,10 @@ public class CORStripes extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			while (doc_tokenizer.hasMoreTokens()) {
+				String word = doc_tokenizer.nextToken(); 
+				context.write(new Text(word), new IntWritable(1));
+			}
 		}
 	}
 
@@ -56,6 +60,11 @@ public class CORStripes extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			int sum = 0;
+			for (IntWritable value : values) {
+				sum += value.get();
+			}
+			context.write(key, new IntWritable(sum));
 		}
 	}
 
@@ -75,6 +84,22 @@ public class CORStripes extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+
+			MapWritable STRIPE = new MapWritable();
+			for (String word : sorted_word_set) 
+			{
+				NavigableSet<String> tailSet = ((TreeSet<String>) sorted_word_set).tailSet(word, false);
+				if (!tailSet.isEmpty())
+				{
+					for (String nextWord : tailSet) {
+					    if (!STRIPE.containsKey(new Text(nextWord))) {
+						    STRIPE.put(new Text(nextWord), new IntWritable(1)); 
+							context.write(new Text(word), STRIPE);
+							STRIPE.clear();	
+					    }
+				    }
+				}
+			}
 		}
 	}
 
@@ -89,6 +114,23 @@ public class CORStripes extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			MapWritable result = new MapWritable();
+			for (MapWritable value : values) 
+			{
+				for (Writable entryKey : value.keySet()) 
+				{
+					IntWritable count = (IntWritable) value.get(entryKey);
+					if (result.containsKey(entryKey)) {
+						IntWritable existingCount = (IntWritable) result.get(entryKey);
+                        existingCount.set(existingCount.get() + count.get());
+                    } 
+				    else 
+				    {
+                        result.put(entryKey, new IntWritable(count.get()));
+                    }
+			    }
+		    }
+			context.write(key, result);
 		}
 	}
 
@@ -142,6 +184,23 @@ public class CORStripes extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			double freq1 = 0;
+			if (key!=null) {
+				freq1 = word_total_map.get(key.toString());
+			} 
+			for (MapWritable value:values)
+			{
+				for (Writable entry : value.keySet()) {
+					IntWritable entryValue = (IntWritable) value.get(entry);
+					double freq2 = word_total_map.get(entry.toString());
+					if (freq2 != 0) 
+					{ 
+						double COR = entryValue.get() / (freq1 * freq2);
+						PairOfStrings keyPair = new PairOfStrings(key.toString(), entry.toString());
+						context.write(keyPair, new DoubleWritable(COR));
+					}
+				}
+			}
 		}
 	}
 
